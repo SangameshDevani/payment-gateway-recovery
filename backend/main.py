@@ -22,7 +22,7 @@ app = FastAPI(title="Payment Recovery Agent")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # tighten before you ship the real deployment
+    allow_origins=["https://payment-gateway-recovery.vercel.app"],  # tighten before you ship the real deployment
     allow_methods=["*"],
     allow_headers=["*"],
 )
