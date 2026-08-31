@@ -11,6 +11,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 
 from models import init_db, get_db, Payment, AuditLog
+from seed_failures import generate_batch
 from classifier import classify_batch, classify_payment
 from decision_engine import decide_batch, decide_action
 from executor import execute_batch, execute_action
@@ -30,6 +31,35 @@ app.add_middleware(
 @app.on_event("startup")
 def on_startup():
     init_db()
+    # Render's free tier resets the disk on every cold start (after the
+    # service spins down from inactivity), which wipes SQLite. Auto-seed on
+    # boot if the table is empty so the demo always has data without needing
+    # shell access to run seed_failures.py manually.
+    from models import SessionLocal
+    db = SessionLocal()
+    try:
+        existing_count = db.query(Payment).count()
+        if existing_count == 0:
+            generate_batch(60)
+            print("Startup: database was empty, auto-seeded 60 synthetic failed payments.")
+        else:
+            print(f"Startup: database already has {existing_count} payments, skipping auto-seed.")
+    finally:
+        db.close()
+
+
+@app.post("/admin/reseed")
+def reseed_database(db: Session = Depends(get_db)):
+    """
+    Wipes all payments/audit logs and seeds a fresh batch of 60. Useful for
+    getting a clean batch right before a demo, since Render's free tier
+    doesn't give shell access to run seed_failures.py directly.
+    """
+    db.query(AuditLog).delete()
+    db.query(Payment).delete()
+    db.commit()
+    generate_batch(60)
+    return {"status": "reseeded", "count": 60}
 
 
 @app.get("/health")
