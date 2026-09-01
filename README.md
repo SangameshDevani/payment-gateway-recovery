@@ -4,6 +4,11 @@
 Detects why a payment failed, decides a bounded recovery action, executes it,
 and reports measured recovery across a batch — with a full audit trail.
 
+**Live demo:**
+ - Dashboard: https://payment-gateway-recovery.vercel.app 
+ -Backend API: https://payment-gateway-recovery.onrender.com (/docs for interactive API, /metrics for live numbers)
+  > Backend is on Render's free tier, which sleeps after 15 minutes of inactivity — the first request after a while may take 30–50 seconds to wake up. It auto-seeds a fresh batch of 60 payments on cold start if the database is empty.
+
 ## Architecture
 
 ```
@@ -34,7 +39,7 @@ Batch metrics  (recovery rate, ₹ recovered, breakdown, honest exception list)
 - [x] Step 5 — Stopping rules (retry cap + risk_block floor + instrument-level dedup)
 - [x] Step 6 — Batch runner + metrics (single pipeline call + shared metrics module)
 - [x] Step 7a — React dashboard (backend-connected, verified builds cleanly)
-- [ ] Step 7b — Deploy backend (Render) + frontend (Vercel), record pitch video
+- [x] Step 7b — Deploy backend (Render) + frontend (Vercel), record pitch video
 
 ## Setup
 
@@ -46,7 +51,7 @@ pip install -r requirements.txt
 
 copy .env.example .env
 # fill in RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET (TEST MODE ONLY — starts with rzp_test_)
-# fill in GEMINI_API_KEY (reuse the OKGIP/UFDR-INTEL key, model = gemini-2.5-flash-lite)
+ # fill in GEMINI_API_KEY (model = gemini-3.5-flash-lite — gemini-2.5-flash-lite was retired for new API keys
 
 python seed_failures.py     # generates 60 synthetic failed payments
 python main.py               # starts API on http://localhost:8000
